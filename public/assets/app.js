@@ -437,24 +437,11 @@
     const best = [...state.idx.articles].filter((article) => article.scoreCount > 0)
       .sort((a, b) => b.bayes - a.bayes || b.scoreCount - a.scoreCount || b.latest - a.latest)[0];
     const latestReview = best && reviewed(best.reviews).sort((a, b) => b.createdAt - a.createdAt)[0];
-    const welcome = h('div', { class: 'home-intro' },
-      h('p', { class: 'home-kicker' }, 'Page of the Year'),
-      h('h1', { class: 'home-heading' }, 'Статьи и мнения читателей'),
-      h('p', { class: 'home-description' }, 'Каталог статей «Закулисья Майнкрафта», оценки и рецензии тех, кто их прочитал.'),
-      h('div', { class: 'home-links' },
-        h('a', { class: 'btn btn-primary', href: '#/articles' }, 'Перейти к статьям'),
-        h('a', { class: 'btn btn-outline', href: '#/faq' }, 'О проекте')));
-    const feature = best
-      ? h('a', { class: 'hero-featured', href: articleHref(best.title), 'aria-label': `Лучшая по оценкам статья: ${best.title}` },
-        h('span', { class: 'hero-badge' }, 'Лучше оценена'),
+    if (best) hero.append(h('a', { class: 'hero-featured', href: articleHref(best.title), 'aria-label': `Открыть статью ${best.title}` },
+        h('span', { class: 'hero-badge' }, 'По оценкам читателей'),
         h('span', { class: 'hero-title' }, best.title),
-        h('span', { class: 'hero-meta' }, `${best.bayes.toFixed(1)} из 100 с учётом ${best.scoreCount} ${plural(best.scoreCount, ['оценка', 'оценки', 'оценок'])}`),
-        latestReview && latestReview.text ? h('span', { class: 'hero-quote' }, `«${latestReview.text.slice(0, 220)}»`) : null)
-      : h('div', { class: 'hero-featured hero-featured-empty' },
-        h('span', { class: 'hero-badge' }, 'Каталог'),
-        h('span', { class: 'hero-title' }, 'Выберите статью для чтения'),
-        h('span', { class: 'hero-meta' }, 'В каталоге появятся оценки и рецензии читателей.'));
-    hero.append(h('div', { class: 'home-feature-grid' }, welcome, feature));
+        h('span', { class: 'hero-meta' }, `Сглаженная оценка ${best.bayes.toFixed(1)} из 100 · ${cnt(best.scoreCount, ['оценка', 'оценки', 'оценок'])}`),
+        latestReview && latestReview.text ? h('span', { class: 'hero-quote' }, `«${latestReview.text.slice(0, 220)}»`) : null));
     $('#statTotalReviews').textContent = String(reviewItems.length);
     $('#statAvgScore').textContent = scoreItems.length ? `${avg(scoreItems).toFixed(1)} / 100` : '—';
     $('#statArticles').textContent = String(state.idx.articles.length);
