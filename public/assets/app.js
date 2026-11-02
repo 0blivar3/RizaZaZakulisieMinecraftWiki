@@ -79,6 +79,7 @@
   const scored = (list) => list.filter((r) => r.hasScore !== false && Number.isFinite(r.score));
   const reviewed = (list) => list.filter((r) => r.hasReview !== false);
   const avg = (list) => { const scores = scored(list); return scores.length ? scores.reduce((s, r) => s + r.score, 0) / scores.length : 0; };
+  const ARTICLE_PRIOR_WEIGHT = 10;
   const fmtDate = (ts) => new Date(ts).toLocaleString('ru-RU', { dateStyle: 'medium', timeStyle: 'short' });
   const fmtDay = (ts) => new Date(ts).toLocaleDateString('ru-RU', { dateStyle: 'long' });
   const calcScore = (c) => Math.min(90, Math.round((c[0] + c[1] + c[2] + c[3]) * 1.4 * ATM[c[4]]));
@@ -117,10 +118,6 @@
   const emptyBox = (text) => h('div', { class: 'empty' }, text);
 
   /* ---------- индекс данных ---------- */
-  const localDateISO = (timestamp) => {
-    const d = new Date(timestamp);
-    return `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}-${String(d.getDate()).padStart(2, '0')}`;
-  };
   const fmtArticleDate = (value) => {
     const match = typeof value === 'string' && value.match(/^(\d{4})-(\d{2})-(\d{2})$/);
     return match ? `${match[3]}.${match[2]}.${match[1]}` : '—';
@@ -141,15 +138,20 @@
       if (!arts.has(key)) arts.set(key, { title: r.articleTitle, authorId: r.authorId, authorIds: [r.authorId], reviews: [] });
       arts.get(key).reviews.push(r);
     }
+    const catalogScores = scored(state.reviews);
+    const catalogMean = avg(catalogScores);
     idx.articles = [...arts.values()].map((a) => {
       const scores = scored(a.reviews);
-      const first = a.reviews.length ? Math.min(...a.reviews.map((r) => r.createdAt)) : 0;
+      const scoreTotal = scores.reduce((sum, r) => sum + r.score, 0);
+      const scoreCount = scores.length;
       return {
         ...a,
-        avg: avg(scores),
+        avg: scoreCount ? scoreTotal / scoreCount : 0,
+        scoreCount,
+        bayes: scoreCount ? (scoreTotal + ARTICLE_PRIOR_WEIGHT * catalogMean) / (scoreCount + ARTICLE_PRIOR_WEIGHT) : 0,
         max: scores.length ? Math.max(...scores.map((r) => r.score)) : 0,
         latest: a.reviews.length ? Math.max(...a.reviews.map((r) => r.createdAt)) : 0,
-        createdDate: a.createdDate || dateOverrides.get(lc(a.title)) || (first ? localDateISO(first) : ''),
+        createdDate: a.createdDate || dateOverrides.get(lc(a.title)) || '',
       };
     });
     state.idx = idx;
@@ -245,8 +247,8 @@
           h('span', { class: 'chip' }, cnt(reviewCount, F_REV)),
           h('span', { class: 'chip' }, cnt(scoreCount, ['оценка', 'оценки', 'оценок'])),
           h('span', { class: 'chip' }, scoreCount ? `макс. ${art.max}` : 'нет оценок'),
-          h('span', { class: 'chip' }, `Создана: ${fmtArticleDate(art.createdDate)}`),
-          art.latest ? h('span', { class: 'chip' }, `Активность: ${fmtDay(art.latest)}`) : null,
+          h('span', { class: 'chip' }, `Опубликована: ${fmtArticleDate(art.createdDate)}`),
+          art.latest ? h('span', { class: 'chip' }, `Последняя активность: ${fmtDay(art.latest)}`) : null,
           art.wikiUrl ? h('a', { class: 'chip', href: art.wikiUrl, target: '_blank', rel: 'noopener noreferrer' }, 'Статья в ЗМВ ↗') : null),
         h('div', { class: 'ac-actions' },
           h('a', { class: 'btn btn-outline article-card-action', href: articleHref(art.title) }, 'Открыть страницу'), state.admin ? articleAdminEditor(art) : null)));
@@ -263,7 +265,7 @@
     }});
     const title = h('input', { class: 'input-field', value: art.title, required: true, minlength: 2, maxlength: 150, 'aria-label': 'Название статьи' });
     const authors = h('select', { class: 'input-field', multiple: true, size: 4, 'aria-label': 'Авторы статьи' }, authorOptions(art.authorIds || [art.authorId]));
-    const date = h('input', { class: 'input-field', type: 'date', value: art.createdDate, required: true, 'aria-label': 'Дата создания' });
+    const date = h('input', { class: 'input-field', type: 'date', value: art.createdDate, required: true, 'aria-label': 'Дата публикации' });
     const url = h('input', { class: 'input-field', type: 'text', inputmode: 'url', maxlength: 4096, value: art.wikiUrl || '', required: true, spellcheck: false, 'aria-label': 'Ссылка на статью ЗМВ' });
     const imageUrl = h('input', { class: 'input-field', type: 'url', maxlength: 2048, value: art.coverImage || '', placeholder: 'https://…', 'aria-label': 'URL изображения статьи' });
     form.append(h('label', { class: 'field-label' }, 'Название'), title, h('label', { class: 'field-label' }, 'Авторы'), authors, h('label', { class: 'field-label' }, 'Дата выхода'), date, h('label', { class: 'field-label' }, 'Ссылка ЗМВ (можно вставить [ссылку](URL))'), url, h('label', { class: 'field-label' }, 'URL изображения (HTTPS; оставьте пустым, чтобы убрать обложку)'), imageUrl, h('button', { type: 'submit', class: 'btn btn-primary' }, 'Сохранить изменения'));
@@ -281,7 +283,7 @@
         submit.disabled = true;
         try {
           await api('/admin/articles/date', { method: 'POST', body: { articleTitle: art.title, createdDate: dateInput.value } });
-          toast('Дата создания статьи обновлена', 'ok');
+          toast('Дата публикации обновлена', 'ok');
           await loadData();
         } catch (error) {
           toast(error.message, 'error');
@@ -290,7 +292,7 @@
         }
       },
     });
-    const dateInput = h('input', { class: 'input-field', type: 'date', value: art.createdDate, required: true, 'aria-label': 'Дата создания статьи' });
+    const dateInput = h('input', { class: 'input-field', type: 'date', value: art.createdDate, required: true, 'aria-label': 'Дата публикации статьи' });
     form.append(
       h('label', { class: 'field-label' }, 'Новая дата создания'),
       dateInput,
@@ -432,16 +434,27 @@
     const rs = state.reviews;
     const reviewItems = reviewed(rs);
     const scoreItems = scored(rs);
-    const featured = scoreItems.filter((r) => r.hasReview !== false);
-    if (featured.length) {
-      const top = [...featured].sort((a, b) => b.score - a.score || b.createdAt - a.createdAt)[0];
-      const author = state.idx.authors.get(top.authorId) || { name: 'Неизвестный' };
-      hero.append(h('a', { class: 'hero-featured', href: articleHref(top.articleTitle) },
-        h('div', { class: 'hero-badge' }, '🏆 Топ-1 статья портала'),
-        h('div', { class: 'hero-title' }, top.articleTitle),
-        h('div', { class: 'hero-meta' }, 'Автор: ', h('strong', null, author.name), ' • Оценка: ', h('strong', { class: 'gold' }, `${top.score} / 100`)),
-        h('div', { class: 'hero-quote' }, '«' + top.text.slice(0, 300) + '»')));
-    }
+    const best = [...state.idx.articles].filter((article) => article.scoreCount > 0)
+      .sort((a, b) => b.bayes - a.bayes || b.scoreCount - a.scoreCount || b.latest - a.latest)[0];
+    const latestReview = best && reviewed(best.reviews).sort((a, b) => b.createdAt - a.createdAt)[0];
+    const welcome = h('div', { class: 'home-intro' },
+      h('p', { class: 'home-kicker' }, 'Риса За Закулисье'),
+      h('h1', { class: 'home-heading' }, 'Статьи и мнения читателей'),
+      h('p', { class: 'home-description' }, 'Каталог статей «Закулисья Майнкрафта», оценки и рецензии тех, кто их прочитал.'),
+      h('div', { class: 'home-links' },
+        h('a', { class: 'btn btn-primary', href: '#/articles' }, 'Перейти к статьям'),
+        h('a', { class: 'btn btn-outline', href: '#/faq' }, 'О проекте')));
+    const feature = best
+      ? h('a', { class: 'hero-featured', href: articleHref(best.title), 'aria-label': `Лучшая по оценкам статья: ${best.title}` },
+        h('span', { class: 'hero-badge' }, 'Лучше оценена'),
+        h('span', { class: 'hero-title' }, best.title),
+        h('span', { class: 'hero-meta' }, `${best.bayes.toFixed(1)} из 100 с учётом ${best.scoreCount} ${plural(best.scoreCount, ['оценка', 'оценки', 'оценок'])}`),
+        latestReview && latestReview.text ? h('span', { class: 'hero-quote' }, `«${latestReview.text.slice(0, 220)}»`) : null)
+      : h('div', { class: 'hero-featured hero-featured-empty' },
+        h('span', { class: 'hero-badge' }, 'Каталог'),
+        h('span', { class: 'hero-title' }, 'Выберите статью для чтения'),
+        h('span', { class: 'hero-meta' }, 'В каталоге появятся оценки и рецензии читателей.'));
+    hero.append(h('div', { class: 'home-feature-grid' }, welcome, feature));
     $('#statTotalReviews').textContent = String(reviewItems.length);
     $('#statAvgScore').textContent = scoreItems.length ? `${avg(scoreItems).toFixed(1)} / 100` : '—';
     $('#statArticles').textContent = String(state.idx.articles.length);
@@ -470,8 +483,11 @@
     const sort = $('#articlesSort').value;
     let list = state.idx.articles.filter((a) => !q || norm(a.title).includes(q));
     const by = {
-      rating: (a, b) => b.avg - a.avg, reviews: (a, b) => reviewed(b.reviews).length - reviewed(a.reviews).length,
-      new: (a, b) => b.latest - a.latest, name: (a, b) => a.title.localeCompare(b.title, 'ru'),
+      rating: (a, b) => (b.scoreCount > 0) - (a.scoreCount > 0) || b.bayes - a.bayes || b.scoreCount - a.scoreCount || b.latest - a.latest,
+      reviews: (a, b) => reviewed(b.reviews).length - reviewed(a.reviews).length,
+      new: (a, b) => b.latest - a.latest,
+      publication: (a, b) => (b.createdDate || '').localeCompare(a.createdDate || '') || b.latest - a.latest,
+      name: (a, b) => a.title.localeCompare(b.title, 'ru'),
     };
     list = list.sort(by[sort] || by.rating);
     $('#articlesCount').textContent = cnt(list.length, F_ART);
@@ -505,14 +521,14 @@
         h('div', { class: 'rzt-tags' }, h('span', { class: 'rzt-tag' }, '📄 Статья вики'), h('span', { class: 'rzt-tag rzt-tag-accent' }, 'Закулисье')),
         h('h2', { class: 'rzt-title' }, article.title),
         h('div', { class: 'article-coauthors' }, ...articleAuthors.map((a) => h('a', { class: 'row-gap author-inline', href: authorHref(a.id) }, avatar(a.name, a.avatar, 'avatar-xs'), h('strong', null, a.name)))),
-        h('div', { class: 'article-created-date' }, 'Дата создания: ', h('strong', null, fmtArticleDate(article.createdDate))),
+        h('div', { class: 'article-created-date' }, 'Дата публикации: ', h('strong', null, fmtArticleDate(article.createdDate))),
         article.wikiUrl ? h('div', { class: 'article-detail-actions' }, h('a', { class: 'btn btn-outline', href: article.wikiUrl, target: '_blank', rel: 'noopener noreferrer' }, 'Открыть статью в ЗМВ ↗')) : null,
         articleDateEditor(article),
         h('div', { class: 'article-detail-actions' },
           h('button', { type: 'button', class: 'btn btn-purple', onclick: () => openRatingForArticle(article) }, '⭐ Оценить эту статью')),
         statsRow([[reviewCount, 'Рецензий'], [scoreReviews.length, 'Оценок'], [scoreReviews.length ? Math.round(article.avg) : '—', 'Ср. балл'], [scoreReviews.length ? article.max : '—', 'Макс. балл'], [scoreReviews.length ? Math.min(...scoreReviews.map((r) => r.score)) : '—', 'Мин. балл']], 'inline-stats'))));
     list.replaceChildren(...rs.map((r) => reviewCard(r)));
-    document.title = `${article.title} — рецензии | Закулисье Майнкрафта Вики`;
+    document.title = `${article.title} — рецензии | Риса За Закулисье`;
   }
 
   function renderAuthorsList() {
@@ -586,17 +602,15 @@
       groups.get(k).push(r);
     });
     const authorArticles = state.idx.articles.filter((x) => (x.authorIds || [x.authorId]).includes(a.id));
-    const globalMean = state.idx.articles.filter((x) => scored(x.reviews).length).reduce((sum, x, _, arr) => sum + x.avg / arr.length, 0);
-    const bayes = (x) => { const n = scored(x.reviews).length, m = 10; return (n * x.avg + m * globalMean) / (n + m); };
     const sortSelect = h('select', { class: 'input-field author-article-sort', 'aria-label': 'Сортировать статьи', onchange: (event) => { state.authorArticleSort = event.target.value; route(); } }, [['newest','Сначала новые'],['oldest','Сначала старые'],['best','Лучшие статьи']].map(([v,l]) => h('option', { value: v, selected: (state.authorArticleSort || 'newest') === v }, l)));
-    const sortedAuthorArticles = [...authorArticles].sort((x,y) => state.authorArticleSort === 'oldest' ? (x.createdDate || '').localeCompare(y.createdDate || '') : state.authorArticleSort === 'best' ? bayes(y) - bayes(x) : (y.createdDate || '').localeCompare(x.createdDate || ''));
+    const sortedAuthorArticles = [...authorArticles].sort((x,y) => state.authorArticleSort === 'oldest' ? (x.createdDate || '').localeCompare(y.createdDate || '') : state.authorArticleSort === 'best' ? (y.scoreCount > 0) - (x.scoreCount > 0) || y.bayes - x.bayes || y.scoreCount - x.scoreCount : (y.createdDate || '').localeCompare(x.createdDate || ''));
     const content = state.authorTab === 'articles'
-      ? (authorArticles.length ? h('div', null, h('p', { class: 'muted tiny' }, 'Рейтинг «Лучшие»: среднее с поправкой на число оценок; используется байесовская формула с 10 условными голосами за средний балл каталога.'), sortSelect, h('div', { class: 'article-grid' }, sortedAuthorArticles.map(articleCard))) : emptyBox('Статей пока нет.'))
+      ? (authorArticles.length ? h('div', null, h('p', { class: 'muted tiny' }, 'В подборке «Лучшие» средняя оценка сглаживается с учётом числа голосов и среднего балла каталога.'), sortSelect, h('div', { class: 'article-grid' }, sortedAuthorArticles.map(articleCard))) : emptyBox('Статей пока нет.'))
       : h('div', null, all.length ? all.map((r) => reviewCard(r)) : emptyBox('Рецензий и оценок пока нет.'));
     body.push(h('div', { class: 'panel' },
       tabButtons([['articles', '📚 Статьи'], ['reviews', '💬 Рецензии и оценки']], state.authorTab, (k) => { state.authorTab = k; route(); }), content));
     box.replaceChildren(...body);
-    document.title = `${a.name} — автор | Закулисье Майнкрафта Вики`;
+    document.title = `${a.name} — автор | Риса За Закулисье`;
   }
 
   function renderUsersList() {
@@ -685,7 +699,7 @@
       : (arts.length ? h('div', { class: 'article-grid' }, arts.map(articleCard)) : emptyBox('Статей пока нет.'));
     body.push(h('div', { class: 'panel' }, tabButtons([['reviews', '💬 Рецензии и оценки'], ['articles', '📚 Оценённые статьи']], state.userTab, (k) => { state.userTab = k; route(); }), content));
     box.replaceChildren(...body);
-    document.title = `${u.username} — профиль | Закулисье Майнкрафта Вики`;
+    document.title = `${u.username} — профиль | Риса За Закулисье`;
   }
 
   async function likeReview(id) {
@@ -803,7 +817,7 @@
 
   /* ---------- маршрутизация ---------- */
   const TITLES = { admin: 'Админ-панель', faq: 'Частые вопросы',
-    home: 'Закулисье Майнкрафта Вики — Экспертный портал рецензий', articles: 'Статьи', article: 'Статья', authors: 'Авторы', author: 'Автор',
+    home: 'Риса За Закулисье — статьи и рецензии', articles: 'Статьи', article: 'Статья', authors: 'Авторы', author: 'Автор',
     users: 'Пользователи', user: 'Профиль', critics: 'Критики', value: 'Калькулятор ценности статей ЗМВ', evaluator: 'Оценить статью',
     moderation: 'Модерация', profile: 'Мой профиль', search: 'Поиск', updates: 'История обновлений',
   };
@@ -862,10 +876,10 @@
       if (on) a.setAttribute('aria-current', 'page'); else a.removeAttribute('aria-current');
     });
     if (name !== 'search') $('#globalSearch').value = '';
-    document.title = name === 'home' ? TITLES.home : `${TITLES[name]} | Закулисье Майнкрафта Вики`;
+    document.title = name === 'home' ? TITLES.home : `${TITLES[name]} | Риса За Закулисье`;
 
-    if (name === 'faq') document.title = 'FAQ | Закулисье Майнкрафта Вики';
-    if (name === 'admin') document.title = 'Админ-панель | Закулисье Майнкрафта Вики';
+    if (name === 'faq') document.title = 'Вопросы и ответы | Риса За Закулисье';
+    if (name === 'admin') document.title = 'Админ-панель | Риса За Закулисье';
     if (name === 'admin') renderAdminDashboard();
     if (name === 'home') renderHome();
     if (name === 'articles') renderArticlesList();
