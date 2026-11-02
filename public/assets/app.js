@@ -438,7 +438,7 @@
       .sort((a, b) => b.bayes - a.bayes || b.scoreCount - a.scoreCount || b.latest - a.latest)[0];
     const latestReview = best && reviewed(best.reviews).sort((a, b) => b.createdAt - a.createdAt)[0];
     const welcome = h('div', { class: 'home-intro' },
-      h('p', { class: 'home-kicker' }, 'Риса За Закулисье'),
+      h('p', { class: 'home-kicker' }, 'Page of the Year'),
       h('h1', { class: 'home-heading' }, 'Статьи и мнения читателей'),
       h('p', { class: 'home-description' }, 'Каталог статей «Закулисья Майнкрафта», оценки и рецензии тех, кто их прочитал.'),
       h('div', { class: 'home-links' },
@@ -528,7 +528,7 @@
           h('button', { type: 'button', class: 'btn btn-purple', onclick: () => openRatingForArticle(article) }, '⭐ Оценить эту статью')),
         statsRow([[reviewCount, 'Рецензий'], [scoreReviews.length, 'Оценок'], [scoreReviews.length ? Math.round(article.avg) : '—', 'Ср. балл'], [scoreReviews.length ? article.max : '—', 'Макс. балл'], [scoreReviews.length ? Math.min(...scoreReviews.map((r) => r.score)) : '—', 'Мин. балл']], 'inline-stats'))));
     list.replaceChildren(...rs.map((r) => reviewCard(r)));
-    document.title = `${article.title} — рецензии | Риса За Закулисье`;
+    document.title = `${article.title} — рецензии | Page of the Year`;
   }
 
   function renderAuthorsList() {
@@ -610,7 +610,7 @@
     body.push(h('div', { class: 'panel' },
       tabButtons([['articles', '📚 Статьи'], ['reviews', '💬 Рецензии и оценки']], state.authorTab, (k) => { state.authorTab = k; route(); }), content));
     box.replaceChildren(...body);
-    document.title = `${a.name} — автор | Риса За Закулисье`;
+    document.title = `${a.name} — автор | Page of the Year`;
   }
 
   function renderUsersList() {
@@ -699,7 +699,7 @@
       : (arts.length ? h('div', { class: 'article-grid' }, arts.map(articleCard)) : emptyBox('Статей пока нет.'));
     body.push(h('div', { class: 'panel' }, tabButtons([['reviews', '💬 Рецензии и оценки'], ['articles', '📚 Оценённые статьи']], state.userTab, (k) => { state.userTab = k; route(); }), content));
     box.replaceChildren(...body);
-    document.title = `${u.username} — профиль | Риса За Закулисье`;
+    document.title = `${u.username} — профиль | Page of the Year`;
   }
 
   async function likeReview(id) {
@@ -817,7 +817,7 @@
 
   /* ---------- маршрутизация ---------- */
   const TITLES = { admin: 'Админ-панель', faq: 'Частые вопросы',
-    home: 'Риса За Закулисье — статьи и рецензии', articles: 'Статьи', article: 'Статья', authors: 'Авторы', author: 'Автор',
+    home: 'Page of the Year — статьи и рецензии', articles: 'Статьи', article: 'Статья', authors: 'Авторы', author: 'Автор',
     users: 'Пользователи', user: 'Профиль', critics: 'Критики', value: 'Калькулятор ценности статей ЗМВ', evaluator: 'Оценить статью',
     moderation: 'Модерация', profile: 'Мой профиль', search: 'Поиск', updates: 'История обновлений',
   };
@@ -876,10 +876,10 @@
       if (on) a.setAttribute('aria-current', 'page'); else a.removeAttribute('aria-current');
     });
     if (name !== 'search') $('#globalSearch').value = '';
-    document.title = name === 'home' ? TITLES.home : `${TITLES[name]} | Риса За Закулисье`;
+    document.title = name === 'home' ? TITLES.home : `${TITLES[name]} | Page of the Year`;
 
-    if (name === 'faq') document.title = 'Вопросы и ответы | Риса За Закулисье';
-    if (name === 'admin') document.title = 'Админ-панель | Риса За Закулисье';
+    if (name === 'faq') document.title = 'Вопросы и ответы | Page of the Year';
+    if (name === 'admin') document.title = 'Админ-панель | Page of the Year';
     if (name === 'admin') renderAdminDashboard();
     if (name === 'home') renderHome();
     if (name === 'articles') renderArticlesList();
