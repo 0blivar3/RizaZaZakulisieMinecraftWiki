@@ -3,33 +3,33 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>Page of the Year</title>
-  <meta name="description" content="Сайт для рецензии и оценивания статей Закулисья Майнкрафта вики»: 100-балльная система оценивания, рейтинг авторов, ценность статей ЗМВ.">
+  <title>Page of the Year — статьи и рецензии</title>
+  <meta name="description" content="Статьи Закулисья Майнкрафта, оценки и рецензии читателей. Каталог авторов и история обновлений сайта.">
   <meta name="robots" content="index, follow">
   <meta name="theme-color" content="#0a0b10">
   <!-- ЗАМЕНИТЕ https://YOUR-DOMAIN.pages.dev на адрес вашего сайта (здесь, в robots.txt и sitemap.xml) -->
   <link rel="canonical" href="https://rizazazakulisieminecraftwiki.pages.dev/">
   <meta property="og:type" content="website">
   <meta property="og:locale" content="ru_RU">
-  <meta property="og:site_name" content="Закулисье Майнкрафта Вики">
-  <meta property="og:title" content="Page Of the Year">
-  <meta property="og:description" content="Рецензии и оценки статей вики «Закулисье Майнкрафта» по 100-балльной системе.">
+  <meta property="og:site_name" content="Page of the Year">
+  <meta property="og:title" content="Page of the Year — статьи и рецензии">
+  <meta property="og:description" content="Каталог статей Закулисья Майнкрафта с оценками и рецензиями читателей.">
   <meta property="og:url" content="https://rizazazakulisieminecraftwiki.pages.dev/">
   <meta name="twitter:card" content="summary">
-  <meta name="twitter:title" content="Page of the Year">
-  <meta name="twitter:description" content="Рецензии и оценки статей вики «Закулисье Майнкрафта» по 100-балльной системе.">
+  <meta name="twitter:title" content="Page of the Year — статьи и рецензии">
+  <meta name="twitter:description" content="Каталог статей Закулисья Майнкрафта с оценками и рецензиями читателей.">
   <link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'%3E%3Ctext y='.9em' font-size='90'%3E%F0%9F%8C%90%3C/text%3E%3C/svg%3E">
-  <link rel="stylesheet" href="/assets/style.css?v=2.3.8">
+  <link rel="stylesheet" href="/assets/style.css?v=2.3.9">
   <script type="application/ld+json">
-  {"@context":"https://schema.org","@type":"WebSite","name":"Закулисье Майнкрафта Вики — Экспертный портал","inLanguage":"ru","description":"Портал рецензий и оценок статей вики «Закулисье Майнкрафта»."}
+  {"@context":"https://schema.org","@type":"WebSite","name":"Page of the Year","inLanguage":"ru","description":"Каталог статей «Закулисья Майнкрафта» с оценками и рецензиями читателей."}
   </script>
-  <script src="/assets/app.js?v=2.3.2" defer></script>
+  <script src="/assets/app.js?v=2.3.10" defer></script>
 </head>
 <body>
   <a class="skip-link" href="#main">К содержимому</a>
 
   <header class="header">
-    <a class="brand" href="#/home"><h1>🌐 Закулисье Майнкрафта Вики</h1></a>
+    <a class="brand" href="#/home"><h1>Закулисье Майнкрафта</h1></a>
     <form id="globalSearchForm" class="gsearch" role="search">
       <label class="sr-only" for="globalSearch">Поиск по сайту</label>
       <input type="search" id="globalSearch" class="input-field no-mb" placeholder="Поиск: статьи, авторы, пользователи…" maxlength="80" autocomplete="off">
@@ -49,7 +49,7 @@
     <a class="nav-btn" href="#/articles" data-route="articles">📚 Статьи</a>
     <a class="nav-btn" href="#/authors" data-route="authors">✍️ Авторы</a>
     <a class="nav-btn" href="#/users" data-route="users">👥 Пользователи</a>
-    <a class="nav-btn" href="#/critics" data-route="critics">🤖 Критики</a>
+    <a class="nav-btn" href="#/critics" data-route="critics">Оценки ИИ</a>
     <a class="nav-btn" href="#/evaluator" data-route="evaluator">📝 Оценить статью</a>
     <a class="nav-btn" href="#/value" data-route="value">💎 Ценность ЗМВ</a>
     <a class="nav-btn" href="#/faq" data-route="faq">❔ FAQ</a>
@@ -71,11 +71,11 @@
     <section id="tab-home" class="tab-content" aria-label="Главная">
       <div class="wrap">
         <div id="loadError" class="notice notice-error" hidden></div>
-        <div id="heroContainer"></div>
+        <div id="heroContainer" aria-live="polite"></div>
         <div class="home-widgets-grid">
           <div>
             <div class="row-between mb-12">
-              <h2 class="section-title">💬 Лента рецензий и оценок</h2>
+              <h2 class="section-title">Новые рецензии и оценки</h2>
               <label class="sr-only" for="feedSortSelect">Сортировка</label>
               <select id="feedSortSelect" class="input-field input-auto no-mb">
                 <option value="newest">Сначала новые</option>
@@ -88,7 +88,7 @@
           </div>
           <aside>
             <div class="panel">
-              <h2 class="panel-title">📊 Статистика Вики</h2>
+              <h2 class="panel-title">Статистика</h2>
               <div class="feed-stats-grid">
                 <div class="stat-card"><div class="stat-card-val" id="statTotalReviews">0</div><div class="stat-card-lbl">Рецензий</div></div>
                 <div class="stat-card"><div class="stat-card-val" id="statAvgScore">0 / 100</div><div class="stat-card-lbl">Ср. балл</div></div>
@@ -97,7 +97,7 @@
               </div>
             </div>
             <div class="panel">
-              <h2 class="panel-title">🔥 Популярные авторы</h2>
+              <h2 class="panel-title">Активные авторы</h2>
               <div id="homeTopAuthorsList"></div>
             </div>
           </aside>
@@ -365,9 +365,10 @@
             <input type="search" id="articlesSearch" class="input-field" placeholder="🔍 Найти статью…" maxlength="80" autocomplete="off">
             <label class="sr-only" for="articlesSort">Сортировка</label>
             <select id="articlesSort" class="input-field">
-              <option value="rating">По рейтингу</option>
+              <option value="rating">Лучшие (с учётом числа оценок)</option>
               <option value="reviews">По числу рецензий</option>
-              <option value="new">Сначала новые</option>
+              <option value="new">По активности</option>
+              <option value="publication">По дате публикации</option>
               <option value="name">По алфавиту</option>
             </select>
           </div>
@@ -378,7 +379,7 @@
               <input id="newArticleTitle" class="input-field" type="text" minlength="2" maxlength="150" required autocomplete="off">
               <label class="field-label" for="newArticleAuthor">Автор</label>
               <select id="newArticleAuthor" class="input-field" required multiple size="4" aria-describedby="authorSelectHelp"></select><p id="authorSelectHelp" class="muted tiny">Можно выбрать несколько авторов.</p>
-              <label class="field-label" for="newArticleDate">Дата создания</label>
+              <label class="field-label" for="newArticleDate">Дата публикации в ЗМВ</label>
               <input id="newArticleDate" class="input-field" type="date" required>
               <label class="field-label" for="newArticleImage">URL изображения статьи (HTTPS, необязательно)</label>
               <input id="newArticleImage" class="input-field" type="url" maxlength="2048" placeholder="https://…">
@@ -582,7 +583,7 @@
         <div class="panel updates-intro">
           <p class="eyebrow">Журнал изменений</p>
           <h2 class="section-title">🕘 История обновлений сайта</h2>
-          <p class="muted">Хронология уже выпущенных функций и исправлений. Записи собраны по дате выхода; в каждой можно открыть PR и посмотреть детали.</p>
+          <p class="muted">Что менялось на сайте. В записях есть ссылки на обсуждение изменений и их технические детали.</p>
         </div>
 
         <div class="updates-day">
@@ -600,7 +601,7 @@
               <li><strong>Картинки к статьям</strong><span>У статей появились обложки; администратор добавляет или меняет их через URL.</span></li>
               <li><strong>Компактные профили</strong><span>Страницы авторов стали компактнее, сохранив важную информацию.</span></li>
               <li><strong>Сортировка статей авторов</strong><span>Можно выбрать «Сначала новые», «Сначала старые» или «Лучшие статьи». Лучшие ранжируются по сглаженному среднему: 10 условных голосов учитывают среднее по каталогу.</span></li>
-              <li><strong>Фиты</strong><span>Появилась указывание двух и более авторов статьи.</span></li>
+              <li><strong>Соавторы</strong><span>У статьи может быть несколько авторов; она появится в профиле каждого из них.</span></li>
             </ul>
             <div class="update-entry-foot">
               <a class="update-source" href="https://github.com/0blivar3/RizaZaZakulisieMinecraftWiki/pull/15" target="_blank" rel="noopener noreferrer">Оценки и уведомления · PR #15</a>
